@@ -1,0 +1,142 @@
+{
+  "name": "unblocker-lite",
+  "description": "Unblocker Lite API tools for PR reviewer automation",
+  "version": "1.0.0",
+  "base_url": "${UNBLOCKER_API_URL}",
+  "auth": {
+    "type": "bearer",
+    "env_var": "BACKEND_SHARED_SECRET"
+  },
+  "tools": [
+    {
+      "name": "analyze",
+      "description": "Analyze a PR to determine if it needs reviewer intervention. Returns AI summary, confidence level, recommended reviewers, and proposed action plan.",
+      "method": "POST",
+      "path": "/analyze",
+      "parameters": {
+        "pr_url": {
+          "type": "string",
+          "description": "Full GitHub PR URL (e.g., https://github.com/owner/repo/pull/123)",
+          "required": false
+        },
+        "mode": {
+          "type": "string",
+          "description": "Analysis mode: 'why' for single PR analysis, 'scan' for repository scan",
+          "enum": ["why", "scan"],
+          "default": "why"
+        },
+        "run_id": {
+          "type": "string",
+          "description": "Orchestrate run_id for correlation and audit (REQUIRED)",
+          "required": true
+        }
+      },
+      "returns": {
+        "run_id": "Unique identifier for this analysis run (echoed from input)",
+        "matched": "Whether the PR matches stall criteria",
+        "confidence": "Confidence level: high, low, or none",
+        "approval_required": "Boolean - true if user approval needed before action",
+        "auto_execute": "Boolean - true if high confidence auto-execute allowed",
+        "confidence_explanation": "Human-readable confidence explanation",
+        "risk_assessment": "Risk level and factors for proposed action",
+        "candidates": "Ranked list of recommended reviewers with rationale",
+        "ai_summary": "AI-generated PR summary",
+        "plan": "Proposed action plan (if matched)",
+        "preview_text": "Formatted preview for Slack display",
+        "preview_blocks": "Slack Block Kit JSON for rich display"
+      }
+    },
+    {
+      "name": "act",
+      "description": "Execute the approved action plan from a previous analyze call. Requests reviewers on the PR and optionally adds a comment.",
+      "method": "POST",
+      "path": "/act",
+      "parameters": {
+        "run_id": {
+          "type": "string",
+          "description": "The run_id from a previous /analyze call",
+          "required": true
+        },
+        "approved": {
+          "type": "boolean",
+          "description": "Whether the user approved the action",
+          "default": true
+        },
+        "plan": {
+          "type": "object",
+          "description": "Optional explicit plan to execute (overrides cached plan)",
+          "required": false
+        }
+      },
+      "returns": {
+        "run_id": "The run_id for this execution",
+        "status": "Execution status: reviewers_requested or cancelled",
+        "reviewers": "List of reviewers that were requested",
+        "verified": "Whether the action was verified successful",
+        "execution_time_s": "Time taken to execute in seconds",
+        "outcome_text": "Formatted outcome for Slack display"
+      }
+    },
+    {
+      "name": "wizard",
+      "description": "Pattern Wizard - convert natural language rules into S2 configuration. Supports dry-run testing and activation.",
+      "method": "POST",
+      "path": "/wizard",
+      "parameters": {
+        "input": {
+          "type": "string",
+          "description": "Natural language rule (e.g., 'If PR has no reviewers after 2 hours, request reviewers from CODEOWNERS')",
+          "required": true
+        },
+        "run_id": {
+          "type": "string",
+          "description": "Orchestrate run_id for correlation (REQUIRED)",
+          "required": true
+        },
+        "dry_run_pr_url": {
+          "type": "string",
+          "description": "Optional PR URL to test the rule against",
+          "required": false
+        },
+        "activate": {
+          "type": "boolean",
+          "description": "Whether to activate the parsed configuration",
+          "default": false
+        }
+      },
+      "returns": {
+        "run_id": "Echoed run_id from Orchestrate",
+        "status": "Status: preview, activated, or parse_failed",
+        "parse_method": "How input was parsed: regex or ai",
+        "config": "Extracted configuration object",
+        "dry_run": "Dry-run results if pr_url was provided",
+        "preview_text": "Formatted preview for display"
+      }
+    }
+  ],
+  "orchestrate_integration": {
+    "skill_name": "Unblocker",
+    "skill_description": "Automatically detect stalled PRs and request appropriate reviewers",
+    "triggers": [
+      {
+        "pattern": "/unblock why <PR_URL>",
+        "action": "analyze",
+        "params": {"mode": "why"}
+      },
+      {
+        "pattern": "/unblock scan",
+        "action": "analyze",
+        "params": {"mode": "scan"}
+      },
+      {
+        "pattern": "/unblock wizard \"<input>\"",
+        "action": "wizard"
+      }
+    ],
+    "approval_policy": {
+      "high_confidence": "auto_execute_with_cancel",
+      "low_confidence": "require_approval",
+      "cancel_window_seconds": 10
+    }
+  }
+}

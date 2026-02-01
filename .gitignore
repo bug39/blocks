@@ -1,0 +1,72 @@
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+watsonx_credentials.md
+*credentials*.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+ngrok.log
+uvicorn.log
+
+# Local data overrides
+data/*.local.json
+scripts/*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# mypy
+.mypy_cache/

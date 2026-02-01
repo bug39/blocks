@@ -1,0 +1,207 @@
+openapi: 3.0.0
+info:
+  title: Unblocker Backend
+  version: "1.1"
+  description: AI-powered PR reviewer unblocker built on IBM watsonx Orchestrate
+servers:
+  - url: https://<YOUR_NGROK_URL>  # Update with your ngrok tunnel URL before deploying
+paths:
+  /analyze:
+    post:
+      summary: Analyze PR or scan for stalled PRs
+      description: |
+        Analyzes a PR to determine if it needs reviewer intervention (mode=why),
+        or scans a repo for stalled PRs (mode=scan).
+        Returns AI-generated summary and reviewer recommendations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - run_id
+              properties:
+                pr_url:
+                  type: string
+                  description: GitHub PR URL (required for mode=why)
+                run_id:
+                  type: string
+                  description: Orchestrate run_id for correlation and audit (REQUIRED)
+                mode:
+                  type: string
+                  enum: [why, scan]
+                  default: why
+                  description: Analysis mode - 'why' for single PR, 'scan' for repo-wide
+      responses:
+        "200":
+          description: Analysis result with AI summary and recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run_id:
+                    type: string
+                  mode:
+                    type: string
+                  matched:
+                    type: boolean
+                  confidence:
+                    type: string
+                  approval_required:
+                    type: boolean
+                    description: True if user approval needed before action (Orchestrate reads this)
+                  auto_execute:
+                    type: boolean
+                    description: True if high confidence allows auto-execute (Orchestrate reads this)
+                  ai_summary:
+                    type: string
+                  candidates:
+                    type: array
+                    items:
+                      type: object
+                  preview_text:
+                    type: string
+                  preview_blocks:
+                    type: array
+                    description: Slack Block Kit JSON for rich message display
+  /act:
+    post:
+      summary: Execute approved plan
+      description: |
+        Executes a previously analyzed plan to request reviewers.
+        Includes verification that reviewers were successfully assigned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - run_id
+              properties:
+                run_id:
+                  type: string
+                  description: Orchestrate run_id from analyze step (REQUIRED)
+                approved:
+                  type: boolean
+                  default: true
+                  description: Whether the plan is approved for execution
+                plan:
+                  type: object
+                  description: Optional explicit plan (uses cached if omitted)
+      responses:
+        "200":
+          description: Execution result with verification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run_id:
+                    type: string
+                  status:
+                    type: string
+                  reviewers:
+                    type: array
+                    items:
+                      type: string
+                  verified:
+                    type: boolean
+                  execution_time_s:
+                    type: number
+                  outcome_text:
+                    type: string
+  /wizard:
+    post:
+      summary: Pattern Wizard - Convert natural language to rule config
+      description: |
+        The Pattern Wizard converts natural language descriptions into
+        S2 rule configurations. Supports preview, dry-run, and activation.
+
+        Example input: "If PR has no reviewers after 2 hours, request reviewers from CODEOWNERS"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - input
+                - run_id
+              properties:
+                input:
+                  type: string
+                  description: Natural language rule description
+                  example: "If PR has no reviewers after 2 hours, request reviewers from CODEOWNERS"
+                run_id:
+                  type: string
+                  description: Orchestrate run_id for correlation (REQUIRED)
+                activate:
+                  type: boolean
+                  default: false
+                  description: Whether to activate the parsed config
+                dry_run_pr_url:
+                  type: string
+                  description: Optional PR URL to test the rule against
+      responses:
+        "200":
+          description: Parsed configuration with optional dry-run results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run_id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [preview, activated, parse_failed]
+                  parse_method:
+                    type: string
+                    enum: [regex, ai]
+                  input:
+                    type: string
+                  config:
+                    type: object
+                    properties:
+                      rule:
+                        type: string
+                      threshold_hours:
+                        type: integer
+                      reviewer_source:
+                        type: string
+                      excluded_labels:
+                        type: array
+                        items:
+                          type: string
+                  dry_run:
+                    type: object
+                    properties:
+                      pr_url:
+                        type: string
+                      pr_title:
+                        type: string
+                      would_match:
+                        type: boolean
+                      reason:
+                        type: string
+                  message:
+                    type: string
+                  preview_text:
+                    type: string
+  /healthz:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok

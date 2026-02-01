@@ -1,0 +1,9 @@
+Deliverable: Written problem and solution statement (<=500 words)
+
+Software delivery stalls most often at hand-offs: a pull request sits without reviewers, a fix is blocked by missing context, and no one is sure who to nudge. Teams lose hours each week chasing these silent stalls across tools. The result is longer cycle time, frustrated engineers, and missed deadlines.
+
+Unblocker Lite solves this by making stalled review work visible and actionable in minutes, not days. It targets engineering teams that use GitHub and Slack. A developer (or release lead) runs a simple Slack command, /unblock why <PR_URL>, or uses the built-in Pattern Wizard to express a policy in plain English (for example: "If a PR has no reviewers after 24 hours, request reviewers from CODEOWNERS"). The system compiles that idea into a governed workflow, previews it, and activates it with explicit approval.
+
+When a PR is detected as "reviewer missing," Unblocker Lite generates a short reviewer-friendly summary and selects the best reviewers from a deterministic candidate set (CODEOWNERS, recent contributors, or a repo default list). It then presents a clear preview in Slack and, for low-risk actions, automatically requests reviewers after a short cancel window. The outcome is verified and logged, and the full run trace is shown in watsonx Orchestrate for auditability.
+
+This is creative and unique because it blends agentic AI with strict governance in a single orchestrated workflow. Rather than a reminder bot that only nags, Unblocker Lite actually takes the smallest safe action to move work forward while proving why the action is valid. The AI moment is not a gimmick: the model plans and justifies actions within a hard policy gate, and the system provides evidence-linked traceability for every decision. The result is a practical, explainable AI workflow that removes coordination friction without adding risk.

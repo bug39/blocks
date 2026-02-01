@@ -1,0 +1,25 @@
+{
+  "frogdog1": {
+    "median_review_hours": 2,
+    "recent_file_edits": 5,
+    "owned_paths": ["app/", "payments/"]
+  },
+  "alice-dev": {
+    "median_review_hours": 4,
+    "recent_file_edits": 3,
+    "owned_paths": ["api/"]
+  },
+  "bob-eng": {
+    "median_review_hours": 8,
+    "recent_file_edits": 1,
+    "owned_paths": []
+  },
+  "charlie-lead": {
+    "median_review_hours": 12,
+    "recent_file_edits": 0,
+    "owned_paths": ["config/"]
+  },
+  "_meta": {
+    "note": "POC seeded data; production learns from outcomes"
+  }
+}
